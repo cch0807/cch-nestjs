@@ -1,83 +1,50 @@
 //* Create Read */
 
 import * as express from "express";
-import { Cat, CatType } from "./app.model";
+import catsRouter from "./cats/cats.route";
 
-const app: express.Express = express();
+class Server {
+  public app: express.Application;
 
-//* logging middleware
-app.use((req, res, next) => {
-  console.log("this is logging middleware");
-  console.log(req.rawHeaders[1]);
-  next();
-});
+  constructor() {
+    const app: express.Application = express();
+    this.app = app;
+  }
 
-//* json middleware
-app.use(express.json());
+  private setRoute() {
+    this.app.use(catsRouter);
+  }
 
-//* READ 모든 고양이 데이터 조회
-app.get("/cats", (req, res) => {
-  try {
-    const cats = Cat;
-    res.status(200).send({
-      success: true,
-      data: {
-        cats,
-      },
+  private setMiddleware() {
+    //* logging middleware
+    this.app.use((req, res, next) => {
+      console.log("this is logging middleware");
+      console.log(req.rawHeaders[1]);
+      next();
     });
-  } catch (error) {
-    res.status(400).send({
-      success: false,
-      error: error.message,
+
+    //* json middleware
+    this.app.use(express.json());
+
+    this.setRoute();
+
+    //* 404 middleware
+    this.app.use((req, res, next) => {
+      console.log("this is error middleware");
+      res.send({ error: "404 not found error" });
     });
   }
-});
-
-//* READ 특정 고양이 데이터 조회
-app.get("/cats/:id", (req, res) => {
-  try {
-    const params = req.params;
-    const cat = Cat.find((cat) => {
-      return cat.id === params.id;
-    });
-    console.log(cat);
-    res.status(200).send({
-      success: true,
-      data: {
-        cat,
-      },
-    });
-  } catch (error) {
-    res.status(400).send({
-      success: false,
-      error: error.message,
+  public listen() {
+    this.setMiddleware();
+    this.app.listen(8000, () => {
+      console.log("server is on...");
     });
   }
-});
+}
 
-//* CREATE 새로운 고양이 추가
-app.post("/cats", (req, res) => {
-  try {
-    const data = req.body;
-    console.log(data);
-    Cat.push(data); // create
-    res.status(200).send({
-      success: true,
-      data: {},
-    });
-  } catch (error) {
-    res.status(400).send({
-      success: false,
-      error: error.message,
-    });
-  }
-});
+function init() {
+  const server = new Server();
+  server.listen();
+}
 
-//* 404 middleware
-app.use((req, res, next) => {
-  console.log("this is error middleware");
-  res.send({ error: "404 not found error" });
-});
-app.listen(8000, () => {
-  console.log("server is on...");
-});
+init();
